@@ -232,43 +232,48 @@ lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
 
 num_epochs = 80 # Increased epochs for better training, you can adjust this
 
-print("Starting model training...")
-history = model.fit(
-    train_generator, # Use the prepared ImageDataGenerator for training
-    epochs=num_epochs,
-    validation_data=validation_generator, # Use the prepared ImageDataGenerator for validation
-    callbacks=[lr_callback]
-)
+model_path = 'alexnet_galactic_rings_tf.h5'
 
-print("Training complete.")
-
-# Optionally save the trained model
-model.save('alexnet_galactic_rings_tf.h5')
-print("Model saved to alexnet_galactic_rings_tf.h5")
+if os.path.exists(model_path):
+    print(f"Found saved model at '{model_path}'. Loading instead of retraining...")
+    model = tf.keras.models.load_model(model_path)
+    history = None
+else:
+    print("Starting model training...")
+    history = model.fit(
+        train_generator,
+        epochs=num_epochs,
+        validation_data=validation_generator,
+        callbacks=[lr_callback]
+    )
+    print("Training complete.")
+    model.save(model_path)
+    print(f"Model saved to {model_path}")
 
 print("Evaluating model on test data...")
 loss, accuracy = model.evaluate(validation_generator)
 print(f'Accuracy of the network on the test images: {accuracy*100:.2f}%')
 
-# Plot training & validation accuracy values
-plt.figure(figsize=(12, 5))
-plt.subplot(1, 2, 1)
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc='upper left')
+if history is not None:
+    # Plot training & validation accuracy values
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
 
-# Plot training & validation loss values
-plt.subplot(1, 2, 2)
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Validation'], loc='upper left')
-plt.show()
+    # Plot training & validation loss values
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
 
 from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, roc_curve
 import seaborn as sns
