@@ -234,6 +234,13 @@ num_epochs = 80 # Increased epochs for better training, you can adjust this
 
 model_path = 'alexnet_galactic_rings_tf.h5'
 
+checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+    filepath=model_path,
+    monitor='val_loss',
+    save_best_only=True,
+    verbose=1
+)
+
 if os.path.exists(model_path):
     print(f"Found saved model at '{model_path}'. Loading instead of retraining...")
     model = tf.keras.models.load_model(model_path)
@@ -244,11 +251,10 @@ else:
         train_generator,
         epochs=num_epochs,
         validation_data=validation_generator,
-        callbacks=[lr_callback]
+        callbacks=[lr_callback, checkpoint_callback]
     )
     print("Training complete.")
-    model.save(model_path)
-    print(f"Model saved to {model_path}")
+    print(f"Best model saved to {model_path}")
 
 print("Evaluating model on test data...")
 loss, accuracy = model.evaluate(validation_generator)
@@ -412,23 +418,3 @@ def predict_single_image(model, image, class_names):
     confidence = predictions[0][predicted_class_idx]
 
     return predicted_class, confidence
-
-# Get a random image from the test set (original un-preprocessed for display)
-# We need to load CIFAR-10 again to get un-preprocessed images for display
-(_, _), (raw_x_test, raw_y_test) = tf.keras.datasets.cifar10.load_data()
-
-random_idx = np.random.randint(len(raw_x_test))
-example_input_raw = raw_x_test[random_idx]
-example_label_raw = raw_y_test[random_idx][0] # Get integer label
-
-# Make a prediction using the raw image
-predicted_class, confidence = predict_single_image(model, example_input_raw, class_names)
-
-# Display the image and prediction
-plt.imshow(example_input_raw)
-plt.title(f"Predicted: {predicted_class} (Confidence: {confidence:.2f})\nActual: {class_names[example_label_raw]}")
-plt.axis('off')
-plt.show()
-
-print(f"The model predicts the image is a '{predicted_class}' with a confidence of {confidence:.2f}.")
-print(f"The actual class is '{class_names[example_label_raw]}'.")
